@@ -42,17 +42,25 @@ exports.getPostById = async (req, res, next) => {
 
 
 exports.createPost = async (req, res) => {
-  const newPost = await Post.create({
-    ...req.body,
-    anonymous: Boolean(req.body.anonymous),
-    owner: req.user._id,
-  });
+  try {
+    const newPost = await Post.create({
+      ...req.body,
+      anonymous: Boolean(req.body.anonymous),
+      owner: req.user._id,
+    });
 
-  res.status(201).json({
-    success: true,
-    message: "Post created successfully",
-    post: newPost,
-  });
+    res.status(201).json({
+      success: true,
+      message: "Post created successfully",
+      post: newPost,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
 
