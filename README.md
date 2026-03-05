@@ -30,6 +30,7 @@ v2.0.0 – MERN Rebuild
 ## 📸 Screenshots  
 
 <p align="center">
-  <img src="./screenshots/homepage.png" alt="Homepage" width="400"/>
-  <img src="./screenshots/mobileView.png" alt="feed" width="400"/>
+  <img src="./Screenshots/homepage.png" alt="Homepage" width="400"/>
+  <img src="./Screenshots/mobileView.png" alt="feed" height="400"/>
 </p>
+
