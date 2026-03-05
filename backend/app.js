@@ -18,6 +18,10 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan("dev"));
 
+app.get("/", (req, res) => {
+  res.send("Anonify API running..!!!" );
+});
+
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
 app.use("/comments", commentRoutes);
