@@ -34,29 +34,29 @@ export default function Navbar({ activePage = '' }) {
           {/* Desktop links */}
           <div className="nav-links">
             <Link to="/feed" className={lc('feed')}>
-              Feed <span className="link-icon">🔥</span>
+              Feed <span className="link-icon"><i className="fa-solid fa-fire" style={{color: "rgb(245, 116, 0)"}}></i></span>
             </Link>
 
             {!isLoggedIn && (
               <Link to="/signup" className={lc('signup')}>
-                Signup <span className="link-icon">👤</span>
+                Signup <span className="link-icon"><i className="fa-solid fa-user-plus"></i></span>
               </Link>
             )}
 
             {isLoggedIn ? (
               <button className="nav-link nav-logout-btn" onClick={handleLogout}>
-                Logout <span className="link-icon">🚪</span>
+                Logout <span className="link-icon"> <i className="fa-solid fa-right-from-bracket"></i></span>
               </button>
             ) : (
               <Link to="/login" className={lc('login')}>
-                Login <span className="link-icon">🔐</span>
+                Login <span className="link-icon"><i className="fa-solid fa-arrow-right-to-bracket"></i></span>
               </Link>
             )}
           </div>
 
           {/* Right CTA */}
           <div className="nav-right">
-            <Link to="/create" className="btn-spill-nav">+ Spill Tea</Link>
+            <Link to="/create" className="btn-spill-nav"><i className="fa-solid fa-plus"></i> Spill Tea</Link>
           </div>
 
           {/* Hamburger */}
@@ -76,22 +76,22 @@ export default function Navbar({ activePage = '' }) {
 
       {/* Mobile drawer */}
       <div className={`nav-mobile${mobileOpen ? ' open' : ''}`} role="menu">
-        <Link to="/feed" className={lc('feed')} onClick={close}>Feed 🔥</Link>
+        <Link to="/feed" className={lc('feed')} onClick={close}>Feed <i className="fa-solid fa-fire" style={{color: "rgb(245, 116, 0)"}}></i></Link>
 
         {!isLoggedIn && (
-          <Link to="/signup" className={lc('signup')} onClick={close}>Signup 👤</Link>
+          <Link to="/signup" className={lc('signup')} onClick={close}>Signup <i className="fa-solid fa-user-plus"></i></Link>
         )}
 
         {isLoggedIn ? (
           <button className="nav-link nav-logout-btn" onClick={handleLogout}>
-            Logout 🚪
+            Logout <i className="fa-solid fa-right-from-bracket"></i>
           </button>
         ) : (
-          <Link to="/login" className={lc('login')} onClick={close}>Login 🔐</Link>
+          <Link to="/login" className={lc('login')} onClick={close}>Login <i className="fa-solid fa-arrow-right-to-bracket"></i></Link>
         )}
 
         <div className="nav-mobile-footer">
-          <Link to="/spill" className="btn-spill-nav" onClick={close}>+ Spill Tea</Link>
+          <Link to="/create" className="btn-spill-nav" onClick={close}><i className="fa-solid fa-plus"></i> Spill Tea</Link>
         </div>
       </div>
     </>

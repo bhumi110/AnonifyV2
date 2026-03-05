@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { loginApi } from '../api/authApi';   // ← your actual auth api
+import { loginApi } from '../api/authApi';
 import '../styles/auth.css';
 
 // ── Google logo ────────────────────────────────────────────
@@ -65,12 +65,12 @@ export default function Login() {
         password: form.password,
       });
 
-      // Your axiosInstance returns res.data directly
-      // Store token with key "token" — matches your axiosInstance interceptor
-      if (res.data?.token) {
-        localStorage.setItem('token', res.data.token);
-      }
-      // Flag for Navbar Login → Logout swap
+      // backend returns { success, token, user: { id, username, email } }
+      const { token, user } = res.data;
+
+      if (token) localStorage.setItem('token', token);
+      if (user?.id) localStorage.setItem('userId', user.id);
+      if (user?.username) localStorage.setItem('username', user.username);
       localStorage.setItem('isLoggedIn', 'true');
 
       showToast('Welcome back! Redirecting…', 'success');
@@ -107,7 +107,7 @@ export default function Login() {
             <div className="field">
               <label htmlFor="email">Email:</label>
               <div className="field-wrap">
-                <span className="field-icon">✉️</span>
+                <span className="field-icon"><i className="fa-regular fa-envelope"></i></span>
                 <input
                   id="email"
                   type="email"
@@ -119,14 +119,14 @@ export default function Login() {
                   autoFocus
                 />
               </div>
-              {errors.email && <p className="field-error">⚠ {errors.email}</p>}
+              {errors.email && <p className="field-error"><i className="fa-solid fa-triangle-exclamation"></i> {errors.email}</p>}
             </div>
 
             {/* Password */}
             <div className="field">
               <label htmlFor="password">Password:</label>
               <div className="field-wrap">
-                <span className="field-icon">🔒</span>
+                <span className="field-icon"><i className="fa-solid fa-key"></i></span>
                 <input
                   id="password"
                   type={showPw ? 'text' : 'password'}
@@ -142,7 +142,7 @@ export default function Login() {
                   onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? 'Hide password' : 'Show password'}
                 >
-                  {showPw ? '🙈' : '👁️'}
+                  {showPw ? <i className="fa-solid fa-eye-slash"></i> : <i className="fa-solid fa-eye"></i>}
                 </button>
               </div>
               {errors.password && <p className="field-error">⚠ {errors.password}</p>}

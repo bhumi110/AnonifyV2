@@ -155,7 +155,7 @@ export default function Create() {
       <div className="spill-page">
         {/* Back link */}
         <button className="back-link" onClick={() => navigate("/feed")}>
-          ← Back to Feed
+          <i className="fa-solid fa-arrow-left"></i> Back to Feed
         </button>
 
         {/* Hero */}

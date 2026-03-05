@@ -40,6 +40,10 @@ exports.deleteComment = async (req, res) => {
     throw new ApiError(403, "Forbidden");
   }
 
+  await Post.findByIdAndUpdate(comment.post, {
+    $pull: { comments: comment._id }
+  });
+
   await comment.deleteOne();
 
   res.status(200).json({

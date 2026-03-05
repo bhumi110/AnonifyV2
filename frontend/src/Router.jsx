@@ -4,6 +4,7 @@ import Feed from "./pages/Feed";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Create from "./pages/Create"
+import Post from "./pages/Post";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
   {
     path:"/create",
     element:<Create/>
+  },
+  {
+    path:"/post/:id",
+    element:<Post/>
   }
 ]);
 

@@ -1,12 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { getPostsApi } from '../api/postApi';
 import '../styles/feed.css';
 
 const CATEGORIES = [
-  'All', 'Relationship', 'Family', 'Friendship',
-  'Hot Take', 'Drama', 'Advice',
+  'All', 'Relationship', 'Family', 'Advice',
+  'Friendship', 'Drama', 'Hot Take',
 ];
-const PAGE_SIZE = 10;
+
+const REACTIONS = [
+  { key: 'fire',  emoji: '🔥', label: 'Fire'  },
+  { key: 'drama', emoji: '👀', label: 'Drama' },
+  { key: 'skull', emoji: '💀', label: 'Skull' },
+  { key: 'shock', emoji: '😮', label: 'Shock' },
+];
 
 function tagClass(cat) {
   const map = {
@@ -16,16 +24,15 @@ function tagClass(cat) {
     'Friendship':   'tag-friendship',
     'Drama':        'tag-drama',
     'Advice':       'tag-advice',
-    'Confession':   'tag-confession',
   };
   return map[cat] || 'tag-default';
 }
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr)) / 1000;
-  if (diff < 60)    return `${Math.floor(diff)}s ago`;
-  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 60)      return `${Math.floor(diff)}s ago`;
+  if (diff < 3600)    return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400)   return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 2592000) return `${Math.floor(diff / 86400)} days ago`;
   return new Date(dateStr).toLocaleDateString();
 }
@@ -44,21 +51,38 @@ function SkeletonCard() {
 }
 
 function PostCard({ post }) {
+  const navigate = useNavigate();
+
+
+  const reactionCounts = REACTIONS.map((r) => ({
+    ...r,
+    count: Array.isArray(post.reactions?.[r.key])
+      ? post.reactions[r.key].length
+      : 0,
+  }));
+
+  const authorLabel = post.anonymous
+    ? 'Anonymous'
+    : post.owner?.username || 'Anonymous';
+
   return (
-    <article className="post-card">
+    <article
+      className="post-card"
+      onClick={() => navigate(`/post/${post._id}`)}
+      style={{ cursor: 'pointer' }}
+    >
       <h2 className="post-title">{post.title}</h2>
 
       <div className="post-tags">
         <span className={`tag ${tagClass(post.category)}`}>{post.category}</span>
-        <span className="tag-anon">Anonymous</span>
+        <span className="tag-anon">{authorLabel}</span>
       </div>
 
-      <p className="post-body">{post.body}</p>
+      <p className="post-body">{post.story}</p>
 
-      {/* Reactions */}
       <div className="post-reactions">
-        {post.reactions?.map((r) => (
-          <span className="reaction" key={r.emoji} title={r.label}>
+        {reactionCounts.map((r) => (
+          <span className="reaction" key={r.key} title={r.label}>
             <span className="r-emoji">{r.emoji}</span>
             <span className="r-count">{r.count.toLocaleString()}</span>
           </span>
@@ -70,7 +94,7 @@ function PostCard({ post }) {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          {post.comments?.toLocaleString()}
+          {Array.isArray(post.comments) ? post.comments.length : 0}
         </span>
         <span className="meta-item">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -85,64 +109,83 @@ function PostCard({ post }) {
 }
 
 export default function Feed() {
-  const [posts,       setPosts]       = useState([]);
-  const [total,       setTotal]       = useState(0);
-  const [page,        setPage]        = useState(1);
-  const [category,    setCategory]    = useState('All');
-  const [sort,        setSort]        = useState('trending');
-  const [search,      setSearch]      = useState('');
+  const [allPosts,  setAllPosts]  = useState([]);  // raw API response
+  const [displayed, setDisplayed] = useState([]);  // after client-side filter/sort
+  const [category,  setCategory]  = useState('All');
+  const [sort,      setSort]      = useState('trending');
   const [searchDraft, setSearchDraft] = useState('');
-  const [loading,     setLoading]     = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error,       setError]       = useState(null);
+  const [search,    setSearch]    = useState('');
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
 
-  const fetchPosts = useCallback(async (pg, cat, srt, q, append = false) => {
-    pg === 1 ? setLoading(true) : setLoadingMore(true);
+  const fetchPosts = useCallback(async () => {
+    setLoading(true);
     setError(null);
-
     try {
-      const params = new URLSearchParams({
-        page:  pg,
-        limit: PAGE_SIZE,
-        sort:  srt,
-        ...(cat !== 'All' && { category: cat }),
-        ...(q.trim()      && { search:   q.trim() }),
-      });
-
-      const res = await fetch(`/api/posts?${params}`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-
-      const data = await res.json();
-
-      setPosts((prev) => append ? [...prev, ...data.posts] : data.posts);
-      setTotal(data.total);
+      const res = await getPostsApi();
+      const posts = res.data?.posts ?? [];
+      setAllPosts(posts);
     } catch (err) {
-      setError(err.message);
+      console.error('[Feed]', err?.response?.data || err.message);
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to load posts'
+      );
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, []);
 
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
   useEffect(() => {
-    setPage(1);
-    fetchPosts(1, category, sort, search, false);
-  }, [category, sort, search, fetchPosts]);
+    let result = [...allPosts];
+
+    if (category !== 'All') {
+      result = result.filter((p) => p.category === category);
+    }
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          p.story?.toLowerCase().includes(q)
+      );
+    }
+
+    const totalReactions = (p) =>
+      ['fire', 'drama', 'skull', 'shock'].reduce(
+        (sum, k) => sum + (Array.isArray(p.reactions?.[k]) ? p.reactions[k].length : 0),
+        0
+      );
+
+    if (sort === 'latest') {
+      result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sort === 'oldest') {
+      result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (sort === 'top') {
+      result.sort((a, b) => totalReactions(b) - totalReactions(a));
+    } else if (sort === 'trending') {
+      result.sort((a, b) => {
+        const score = (p) => {
+          const r = totalReactions(p);
+          const c = Array.isArray(p.comments) ? p.comments.length : 0;
+          const ageHours = (Date.now() - new Date(p.createdAt)) / 3_600_000;
+          return (r + c * 2) / Math.pow(ageHours + 2, 1.5);
+        };
+        return score(b) - score(a);
+      });
+    }
+
+    setDisplayed(result);
+  }, [allPosts, category, sort, search]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchDraft), 420);
     return () => clearTimeout(t);
   }, [searchDraft]);
-
-  const handleSearchBtn = () => setSearch(searchDraft);
-
-  const handleLoadMore = () => {
-    const next = page + 1;
-    setPage(next);
-    fetchPosts(next, category, sort, search, true);
-  };
-
-  const hasMore = posts.length < total;
 
   return (
     <>
@@ -156,6 +199,7 @@ export default function Feed() {
           <p>The latest drama and advice from the community</p>
         </div>
 
+        {/* Search */}
         <div className="search-bar">
           <input
             type="text"
@@ -163,10 +207,10 @@ export default function Feed() {
             placeholder="Search drama, advice, or confessions..."
             value={searchDraft}
             onChange={(e) => setSearchDraft(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearchBtn()}
+            onKeyDown={(e) => e.key === 'Enter' && setSearch(searchDraft)}
             aria-label="Search posts"
           />
-          <button className="btn-search" onClick={handleSearchBtn}>
+          <button className="btn-search" onClick={() => setSearch(searchDraft)}>
             Search
           </button>
         </div>
@@ -182,6 +226,7 @@ export default function Feed() {
               <option value="trending">🔥 Trending</option>
               <option value="latest">✨ Latest</option>
               <option value="top">⬆️ Top</option>
+              <option value="oldest">🕐 Oldest</option>
             </select>
           </div>
 
@@ -201,7 +246,7 @@ export default function Feed() {
 
         {!loading && !error && (
           <p className="post-count">
-            {total.toLocaleString()} post{total !== 1 ? 's' : ''} found
+            {displayed.length.toLocaleString()} post{displayed.length !== 1 ? 's' : ''} found
           </p>
         )}
 
@@ -215,9 +260,19 @@ export default function Feed() {
             <div className="empty-icon">⚠️</div>
             <h3>Something went wrong</h3>
             <p>{error}</p>
+            <button
+              onClick={fetchPosts}
+              style={{
+                marginTop: 16, padding: '8px 20px', cursor: 'pointer',
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8, color: '#fff', fontFamily: 'inherit',
+              }}
+            >
+              Try again
+            </button>
           </div>
 
-        ) : posts.length === 0 ? (
+        ) : displayed.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">🍵</div>
             <h3>No tea to spill here</h3>
@@ -226,27 +281,9 @@ export default function Feed() {
 
         ) : (
           <div className="posts-list">
-            {posts.map((post) => (
-              <PostCard key={post._id ?? post.id} post={post} />
+            {displayed.map((post) => (
+              <PostCard key={post._id} post={post} />
             ))}
-            {loadingMore && Array.from({ length: 3 }).map((_, i) => (
-              <SkeletonCard key={`sk-${i}`} />
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && hasMore && (
-          <div className="feed-actions">
-            <button
-              className="btn-load-more"
-              onClick={handleLoadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore
-                ? <><span className="spinner" /> Loading…</>
-                : 'Load more posts'
-              }
-            </button>
           </div>
         )}
 
