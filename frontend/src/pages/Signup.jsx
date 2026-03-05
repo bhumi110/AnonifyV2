@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { registerApi } from '../api/authApi';
+import { useContext } from 'react';
+import { AuthContext } from '../AuthContext';
 import '../styles/auth.css';
 
 // ── password strength ──────────────────────────────────────
@@ -44,6 +45,7 @@ function Toast({ msg, type, show }) {
 // ── Signup ─────────────────────────────────────────────────
 export default function Signup() {
   const navigate = useNavigate();
+  const { register } = useContext(AuthContext);
 
   const [form,    setForm]    = useState({ username: '', email: '', password: '' });
   const [errors,  setErrors]  = useState({});
@@ -79,17 +81,11 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await registerApi({
+      await register({
         username: form.username.trim(),
         email:    form.email.trim(),
         password: form.password,
       });
-
-      // Store token with key "token" — matches axiosInstance interceptor
-      if (res.data?.token) {
-        localStorage.setItem('token', res.data.token);
-      }
-      localStorage.setItem('isLoggedIn', 'true');
 
       showToast('Account created! Redirecting…', 'success');
       setTimeout(() => navigate('/feed'), 1600);

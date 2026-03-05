@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../AuthContext';
 import '../styles/navbar.css';
 
 export default function Navbar({ activePage = '' }) {
-  const navigate      = useNavigate();
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [avatarOpen,  setAvatarOpen]  = useState(false);
-  const avatarRef     = useRef(null);
+  const navigate     = useNavigate();
+  const { user, logout } = useContext(AuthContext);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const avatarRef    = useRef(null);
 
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-  const username   = localStorage.getItem('username') || '';
-  const initial    = username ? username[0].toUpperCase() : '?';
+  const initial = user?.username ? user.username[0].toUpperCase() : '?';
 
   const close = () => setMobileOpen(false);
   const lc    = (page) => `nav-link${activePage === page ? ' active' : ''}`;
@@ -27,10 +27,7 @@ export default function Navbar({ activePage = '' }) {
   }, []);
 
   function handleLogout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
+    logout();
     close();
     setAvatarOpen(false);
     navigate('/');
@@ -50,28 +47,28 @@ export default function Navbar({ activePage = '' }) {
           {/* Desktop links */}
           <div className="nav-links">
             <Link to="/feed" className={lc('feed')}>
-              Feed <span className="link-icon"><i className="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></span>
+              Feed <span className="link-icon"><i class="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></span>
             </Link>
 
-            {!isLoggedIn && (
+            {!user && (
               <Link to="/signup" className={lc('signup')}>
-                Signup <span className="link-icon"><i className="fa-solid fa-user-plus"></i></span>
+                Signup <span className="link-icon"><i class="fa-solid fa-user-plus"></i></span>
               </Link>
             )}
 
-            {!isLoggedIn && (
+            {!user && (
               <Link to="/login" className={lc('login')}>
-                Login <span className="link-icon"><i className="fa-solid fa-right-to-bracket"></i></span>
+                Login <span className="link-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
               </Link>
             )}
           </div>
 
           {/* Right side */}
           <div className="nav-right">
-            <Link to="/create" className="btn-spill-nav"><i className="fa-solid fa-plus"></i> Spill Tea</Link>
+            <Link to="/create" className="btn-spill-nav"><i class="fa-solid fa-plus"></i> Spill Tea</Link>
 
             {/* Avatar dropdown — only when logged in */}
-            {isLoggedIn && (
+            {user && (
               <div className="nav-avatar-wrap" ref={avatarRef}>
                 <button
                   className="nav-avatar-btn"
@@ -87,7 +84,7 @@ export default function Navbar({ activePage = '' }) {
                     <div className="nav-avatar-user">
                       <span className="nav-avatar-initial nav-avatar-initial--lg">{initial}</span>
                       <div>
-                        <p className="nav-avatar-name">@{username}</p>
+                        <p className="nav-avatar-name">@{user.username}</p>
                         <p className="nav-avatar-sub">Your profile</p>
                       </div>
                     </div>
@@ -141,22 +138,22 @@ export default function Navbar({ activePage = '' }) {
 
       {/* Mobile drawer */}
       <div className={`nav-mobile${mobileOpen ? ' open' : ''}`} role="menu">
-        <Link to="/feed" className={lc('feed')} onClick={close}>Feed <i className="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></Link>
+        <Link to="/feed" className={lc('feed')} onClick={close}>Feed <i class="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></Link>
 
-        {isLoggedIn ? (
+        {user ? (
           <>
-            <Link to="/profile" className={lc('profile')} onClick={close}>Profile 👤</Link>
-            <button className="nav-link nav-logout-btn" onClick={handleLogout}>Log out 🚪</button>
+            <Link to="/profile" className={lc('profile')} onClick={close}>Profile <i class="fa-solid fa-user"></i></Link>
+            <button className="nav-link nav-logout-btn" onClick={handleLogout}>Log out <i class="fa-solid fa-right-from-bracket"></i></button>
           </>
         ) : (
           <>
-            <Link to="/signup" className={lc('signup')} onClick={close}>Signup 👤</Link>
-            <Link to="/login"  className={lc('login')}  onClick={close}>Login <i className="fa-solid fa-right-to-bracket"></i></Link>
+            <Link to="/signup" className={lc('signup')} onClick={close}>Signup <i class="fa-solid fa-user-plus"></i></Link>
+            <Link to="/login"  className={lc('login')}  onClick={close}>Login <i class="fa-solid fa-right-to-bracket"></i></Link>
           </>
         )}
 
         <div className="nav-mobile-footer">
-          <Link to="/create" className="btn-spill-nav" onClick={close}><i className="fa-solid fa-plus"></i> Spill Tea</Link>
+          <Link to="/create" className="btn-spill-nav" onClick={close}><i class="fa-solid fa-plus"></i> Spill Tea</Link>
         </div>
       </div>
     </>

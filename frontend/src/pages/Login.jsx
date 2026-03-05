@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useContext } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { AuthContext } from '../AuthContext';
 import Navbar from '../components/Navbar';
-import { loginApi } from '../api/authApi';
 import '../styles/auth.css';
 
 // ── Google logo ────────────────────────────────────────────
@@ -29,6 +29,9 @@ function Toast({ msg, type, show }) {
 // ── Login ──────────────────────────────────────────────────
 export default function Login() {
   const navigate = useNavigate();
+  const location  = useLocation();
+  const { login } = useContext(AuthContext);
+  const from = location.state?.from?.pathname || '/feed';
 
   const [form,    setForm]    = useState({ email: '', password: '' });
   const [errors,  setErrors]  = useState({});
@@ -60,21 +63,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await loginApi({
-        email:    form.email.trim(),
-        password: form.password,
-      });
-
-      // backend returns { success, token, user: { id, username, email } }
-      const { token, user } = res.data;
-
-      if (token) localStorage.setItem('token', token);
-      if (user?.id) localStorage.setItem('userId', user.id);
-      if (user?.username) localStorage.setItem('username', user.username);
-      localStorage.setItem('isLoggedIn', 'true');
+      await login({ email: form.email.trim(), password: form.password });
 
       showToast('Welcome back! Redirecting…', 'success');
-      setTimeout(() => navigate('/feed'), 1500);
+      setTimeout(() => navigate(from, { replace: true }), 1500);
 
     } catch (err) {
       const msg =
@@ -119,7 +111,7 @@ export default function Login() {
                   autoFocus
                 />
               </div>
-              {errors.email && <p className="field-error"><i className="fa-solid fa-triangle-exclamation"></i> {errors.email}</p>}
+              {errors.email && <p className="field-error">⚠ {errors.email}</p>}
             </div>
 
             {/* Password */}
@@ -142,7 +134,7 @@ export default function Login() {
                   onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? 'Hide password' : 'Show password'}
                 >
-                  {showPw ? <i className="fa-solid fa-eye-slash"></i> : <i className="fa-solid fa-eye"></i>}
+                  {showPw ?<i className="fa-solid fa-eye-slash"></i> : <i className="fa-solid fa-eye"></i>}
                 </button>
               </div>
               {errors.password && <p className="field-error">⚠ {errors.password}</p>}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useContext } from 'react';
+import { AuthContext } from '../AuthContext';
 import { getProfileApi } from '../api/userApi';
 import '../styles/profile.css';
 
@@ -94,7 +96,8 @@ export default function Profile() {
   const [loading,  setLoading] = useState(true);
   const [error,    setError]   = useState(null);
 
-  const username = localStorage.getItem('username') || '';
+  const { user: authUser } = useContext(AuthContext);
+  const username = authUser?.username || '';
   const initial  = username ? username[0].toUpperCase() : '?';
 
   const fetchProfile = useCallback(async () => {
@@ -117,12 +120,8 @@ export default function Profile() {
   }, [navigate]);
 
   useEffect(() => {
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
-      navigate('/login');
-      return;
-    }
     fetchProfile();
-  }, [fetchProfile, navigate]);
+  }, [fetchProfile]);
 
   if (loading) return (
     <>
@@ -223,7 +222,7 @@ export default function Profile() {
             My Posts
           </button>
           <button className="btn-spill-profile" onClick={() => navigate('/create')}>
-            <i className="fa-solid fa-plus"></i> Spill Tea
+            <i class="fa-solid fa-plus"></i> Spill Tea
           </button>
         </div>
 

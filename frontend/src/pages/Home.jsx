@@ -27,7 +27,7 @@ export default function Home() {
 
           <div className="hero-btns">
             <a href="/create" className="btn-spill">
-              Spill Now 🍵&nbsp;→
+              Spill Now 🍵&nbsp;<i class="fa-solid fa-arrow-right-long"></i>
             </a>
             <a href="/feed" className="btn-browse">
               Browse Drama 👀

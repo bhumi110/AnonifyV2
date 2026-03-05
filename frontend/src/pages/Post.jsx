@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { AuthContext } from '../AuthContext';
 import {
   getPostByIdApi,
   reactPostApi,
@@ -67,8 +68,8 @@ function CommentSkeleton() {
 }
 
 function CommentCard({ comment, currentUserId, postId, onDelete, onReview, onReply }) {
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText,      setReplyText]      = useState('');
+  const [showReplyInput,  setShowReplyInput]  = useState(false);
+  const [replyText,       setReplyText]       = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
 
   const authorName = 'Anonymous';
@@ -77,9 +78,9 @@ function CommentCard({ comment, currentUserId, postId, onDelete, onReview, onRep
   const hearts       = Array.isArray(comment.review?.hearts)       ? comment.review.hearts.length       : 0;
   const brokenhearts = Array.isArray(comment.review?.brokenhearts) ? comment.review.brokenhearts.length : 0;
 
-  const hasHeart       = currentUserId && Array.isArray(comment.review?.hearts)
+  const hasHeart  = currentUserId && Array.isArray(comment.review?.hearts)
     && comment.review.hearts.some(id => id === currentUserId || id?._id === currentUserId);
-  const hasBroken      = currentUserId && Array.isArray(comment.review?.brokenhearts)
+  const hasBroken = currentUserId && Array.isArray(comment.review?.brokenhearts)
     && comment.review.brokenhearts.some(id => id === currentUserId || id?._id === currentUserId);
 
   async function handleReply() {
@@ -143,9 +144,7 @@ function CommentCard({ comment, currentUserId, postId, onDelete, onReview, onRep
               <div className="reply-avatar">A</div>
               <div className="reply-content">
                 <div>
-                  <span className="reply-author">
-                    Anonymous
-                  </span>
+                  <span className="reply-author">Anonymous</span>
                   <span className="reply-time">{timeAgo(reply.createdAt)}</span>
                 </div>
                 <p className="reply-body">{reply.reply}</p>
@@ -181,8 +180,13 @@ function CommentCard({ comment, currentUserId, postId, onDelete, onReview, onRep
 }
 
 export default function Post() {
-  const { id }    = useParams();
-  const navigate  = useNavigate();
+  const { id }   = useParams();
+  const navigate = useNavigate();
+
+  // ── Auth from context ──────────────────────────────────────
+  const { user } = useContext(AuthContext);
+  const isLoggedIn    = !!user;
+  const currentUserId = user?._id || user?.id || null;
 
   const [post,        setPost]        = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -190,9 +194,6 @@ export default function Post() {
   const [commentText, setCommentText] = useState('');
   const [submitting,  setSubmitting]  = useState(false);
   const [toast,       setToast]       = useState({ show: false, msg: '', type: 'success' });
-
-  const currentUserId = localStorage.getItem('userId');
-  const isLoggedIn    = localStorage.getItem('isLoggedIn') === 'true';
 
   const fetchPost = useCallback(async () => {
     setLoading(true);
@@ -214,10 +215,9 @@ export default function Post() {
   useEffect(() => { fetchPost(); }, [fetchPost]);
 
   async function handleReact(reaction) {
-    if (!isLoggedIn) { showToast('Login to react', 'error'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     try {
-      const res = await reactPostApi(id, reaction);
-
+      await reactPostApi(id, reaction);
       const updated = await getPostByIdApi(id);
       setPost(updated.data.post);
     } catch (err) {
@@ -228,7 +228,7 @@ export default function Post() {
   async function handleAddComment(e) {
     e.preventDefault();
     if (!commentText.trim()) return;
-    if (!isLoggedIn) { showToast('Login to comment', 'error'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     setSubmitting(true);
     try {
       await createCommentApi(id, { comment: commentText.trim() });
@@ -253,7 +253,7 @@ export default function Post() {
   }
 
   async function handleReviewComment(commentId, type) {
-    if (!isLoggedIn) { showToast('Login to review', 'error'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     try {
       await reviewCommentApi(commentId, type);
       await fetchPost();
@@ -263,7 +263,7 @@ export default function Post() {
   }
 
   async function handleReply(commentId, replyText) {
-    if (!isLoggedIn) { showToast('Login to reply', 'error'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     try {
       await createReplyApi(commentId, { reply: replyText });
       await fetchPost();
@@ -352,7 +352,6 @@ export default function Post() {
 
           <h1 className="post-detail-title">{post.title}</h1>
 
-          {/* Tags row */}
           <div className="post-detail-tags">
             <span className={`tag ${tagClass(post.category)}`}>{post.category}</span>
             <span className="tag-anon">{authorLabel}</span>
@@ -361,7 +360,6 @@ export default function Post() {
             </span>
           </div>
 
-          {/* Custom tags */}
           {post.tags?.length > 0 && (
             <div className="post-detail-chips">
               {post.tags.map((t) => (
@@ -370,10 +368,8 @@ export default function Post() {
             </div>
           )}
 
-          {/* Story */}
           <p className="post-detail-story">{post.story}</p>
 
-          {/* Reactions */}
           <div className="reactions-row">
             {REACTIONS.map((r) => (
               <button
@@ -404,25 +400,37 @@ export default function Post() {
           <form onSubmit={handleAddComment} noValidate>
             <textarea
               className="comment-textarea"
-              placeholder="What would you do in this situation? Share your thoughts..."
+              placeholder={isLoggedIn ? "What would you do in this situation? Share your thoughts..." : "Login to share your advice…"}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               maxLength={MAX_COMMENT + 10}
+              onClick={() => { if (!isLoggedIn) navigate('/login'); }}
+              readOnly={!isLoggedIn}
             />
             <div className="comment-form-footer">
               <span className={`comment-char ${charCls}`}>
                 {commentText.length}/{MAX_COMMENT} characters
               </span>
-              <button
-                type="submit"
-                className="btn-add-comment"
-                disabled={submitting || !commentText.trim() || commentText.length > MAX_COMMENT}
-              >
-                {submitting
-                  ? <><span className="btn-spinner" /> Adding…</>
-                  : <><i className="fa-solid fa-circle-plus"></i> Add Comment</>
-                }
-              </button>
+              {isLoggedIn ? (
+                <button
+                  type="submit"
+                  className="btn-add-comment"
+                  disabled={submitting || !commentText.trim() || commentText.length > MAX_COMMENT}
+                >
+                  {submitting
+                    ? <><span className="btn-spinner" /> Adding…</>
+                    : <><i className="fa-solid fa-circle-plus"></i> Add Comment</>
+                  }
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-add-comment"
+                  onClick={() => navigate('/login')}
+                >
+                  Login to Comment
+                </button>
+              )}
             </div>
           </form>
         </div>
