@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════
-   Navbar.css  –  Anonify navigation
-═══════════════════════════════════════════ */
+
 
 .navbar {
   position: sticky;
@@ -35,9 +33,12 @@
   margin-right: auto;
 }
 
-.nav-brand .brand-icon {
-  font-size: 1.65rem;
-  line-height: 1;
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .nav-brand .brand-name {

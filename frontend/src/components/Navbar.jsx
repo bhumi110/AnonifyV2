@@ -40,32 +40,32 @@ export default function Navbar({ activePage = '' }) {
 
           {/* Brand */}
           <Link to="/" className="nav-brand" aria-label="Anonify home">
-            <span className="brand-icon">🍵</span>
+            <img src="/anonify_logo.png" alt="Anonify logo" className="brand-logo" />
             <span className="brand-name">Anonify</span>
           </Link>
 
           {/* Desktop links */}
           <div className="nav-links">
             <Link to="/feed" className={lc('feed')}>
-              Feed <span className="link-icon"><i class="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></span>
+              Feed <span className="link-icon"><i className="fa-solid fa-fire-flame-curved" style={{color: "rgb(245, 116, 0)"}}></i></span>
             </Link>
 
             {!user && (
               <Link to="/signup" className={lc('signup')}>
-                Signup <span className="link-icon"><i class="fa-solid fa-user-plus"></i></span>
+                Signup <span className="link-icon"><i className="fa-solid fa-user-plus"></i></span>
               </Link>
             )}
 
             {!user && (
               <Link to="/login" className={lc('login')}>
-                Login <span className="link-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+                Login <span className="link-icon"><i className="fa-solid fa-right-to-bracket"></i></span>
               </Link>
             )}
           </div>
 
           {/* Right side */}
           <div className="nav-right">
-            <Link to="/create" className="btn-spill-nav"><i class="fa-solid fa-plus"></i> Spill Tea</Link>
+            <Link to="/create" className="btn-spill-nav"><i className="fa-solid fa-plus"></i> Spill Tea</Link>
 
             {/* Avatar dropdown — only when logged in */}
             {user && (
